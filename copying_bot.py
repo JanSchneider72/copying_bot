@@ -50,7 +50,7 @@ edit_msg_list_length = 10
 filename = "botinfo.cfg"
 filedata = {
             "setup_info" : {
-                        "copy_server_ids" : None,
+                        "copy_server_ids" : ["367376958293671950"],
                         "copy_channel_ids" : None,
                         "post_server_ids" : None,
                         "post_channel_ids" : None
