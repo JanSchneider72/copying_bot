@@ -178,37 +178,37 @@ async def on_ready():
 @bot.event
 async def on_message(message):
  
-    t0 = time.time()
+	t0 = time.time()
  
-    message_channel = message.channel
+	message_channel = message.channel
  
-    global embed
-    global edit_msg_list
-    global edit_msg_list_length
+	global embed
+	global edit_msg_list
+	global edit_msg_list_length
  
-    global copy_server_ids
-    global copy_channel_ids
-    global post_server_ids
-    global post_channel_ids
+	global copy_server_ids
+	global copy_channel_ids
+	global post_server_ids
+	global post_channel_ids
  
-    global commands_server_id
-    global commands_channel_id
-    global commands_server_id_exists
-    global commands_channel_id_exists
+	global commands_server_id
+	global commands_channel_id
+	global commands_server_id_exists
+	global commands_channel_id_exists
  
-    global adding_copy_server
-    global adding_copy_channel
-    global adding_post_server
-    global adding_post_channel
+	global adding_copy_server
+	global adding_copy_channel
+	global adding_post_server
+	global adding_post_channel
  
-    global removing_copy_server
-    global removing_copy_channel
-    global removing_post_server
-    global removing_post_channel
+	global removing_copy_server
+	global removing_copy_channel
+	global removing_post_server
+	global removing_post_channel
  
-    global memberlist
-    global wordlist
-    global case_sensitive_wordlist
+	global memberlist
+	global wordlist
+	global case_sensitive_wordlist
  
 	if ((not commands_server_id_exists) or (message.server.id == commands_server_id)) and ((not commands_channel_id_exists) or (message.channel.id == commands_channel_id)):
 
