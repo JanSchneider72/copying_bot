@@ -55,7 +55,7 @@ filedata = {
                         "post_server_ids" : None,
                         "post_channel_ids" : None
                         },
-            "memberlist" : None,
+            "memberlist" : ["376040692562264074"],
             "wordlist" : None,
             "case_sensitive_wordlist" : None
             }
