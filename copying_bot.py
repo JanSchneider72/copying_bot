@@ -2,6 +2,7 @@ import discord
 import asyncio
 import time
 import json
+import os
  
 #----------------------------------------------------------------------------------------------------
 # These variables must be filled out in order for the bot to work.
@@ -16,10 +17,10 @@ import json
 #                       with the server ID that you put).
  
 selfbot = True
-email = "email"
-password = "password"
-commands_server_id = "478566520255938560"
-commands_channel_id = "478566520255938562"
+email = str(os.environ.get("ACCOUNT_EMAIL"))
+password = str(os.environ.get("ACCOUNT_PASSWORD"))
+commands_server_id = str(os.environ.get("COMMANDS_SERVER_ID"))
+commands_channel_id = str(os.environ.get("COMMANDS_CHANNEL_ID"))
  
 #----------------------------------------------------------------------------------------------------
 # These variables can be edited in the code, but are designed to be changed through discord commands.
