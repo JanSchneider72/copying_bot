@@ -1,216 +1,196 @@
 import discord
 import asyncio
-import time
-import json
-import os
- 
-#----------------------------------------------------------------------------------------------------
-# These variables must be filled out in order for the bot to work.
-#
-# selfbot: If you want a selfbot, just leave it as True, but if you ever want to use it on a normal bot, set it to False.
-# email : The account email.
-# password : The account password.
-# commands_server_id : The bot will only respond to commands in the server with this server ID.
-#                      If you leave it blank, the bot will respond to commands in every server.
-# commands_channel_id : The bot will only respond to commands in the channel with this channel ID.
-#                       If you leave it blank, the bot will respond to commands in every channel (in the server
-#                       with the server ID that you put).
- 
-selfbot = True
-email = str(os.environ.get("ACCOUNT_EMAIL"))
-password = str(os.environ.get("ACCOUNT_PASSWORD"))
-commands_server_id = str(os.environ.get("COMMANDS_SERVER_ID"))
-commands_channel_id = str(os.environ.get("COMMANDS_CHANNEL_ID"))
- 
-#----------------------------------------------------------------------------------------------------
-# These variables can be edited in the code, but are designed to be changed through discord commands.
-# To see more commands type !help in discord.
-#
-# copy_server_ids : The servers to copy from.
-# copy_channel_ids : The channels inside those servers to copy from.
-# post_server_ids : The servers to post those messages to.
-# post_channel_ids : The channels inside those servers to post those messages to.
- 
-copy_server_ids = []
-copy_channel_ids = []
-post_server_ids = []
-post_channel_ids = []
- 
-memberlist = []
-wordlist = []
-case_sensitive_wordlist = True
- 
-#----------------------------------------------------------------------------------------------------
- 
-bot = discord.Client()
- 
-edit_msg_list = []
-edit_msg_list_length = 10
- 
-filename = "botinfo.cfg"
-filedata = {
-            "setup_info" : {
-                        "copy_server_ids" : ["367376958293671950"],
-                        "copy_channel_ids" : None,
-                        "post_server_ids" : None,
-                        "post_channel_ids" : None
-                        },
-            "memberlist" : ["376040692562264074"],
-            "wordlist" : None,
-            "case_sensitive_wordlist" : None
-            }
- 
-try:
-    filehandle = open(filename)
-    filedata = json.load(filehandle)
-except Exception:
-    pass
-else:
-    if filedata["setup_info"]["copy_server_ids"] != None:
-        copy_server_ids = filedata["setup_info"]["copy_server_ids"]
-    if filedata["setup_info"]["copy_channel_ids"] != None:
-        copy_channel_ids = filedata["setup_info"]["copy_channel_ids"]
-    if filedata["setup_info"]["post_server_ids"] != None:
-        post_server_ids = filedata["setup_info"]["post_server_ids"]
-    if filedata["setup_info"]["post_channel_ids"] != None:
-        post_channel_ids = filedata["setup_info"]["post_channel_ids"]
-    if filedata["memberlist"] != None:
-        memberlist = filedata["memberlist"]
-    if filedata["wordlist"] != None:
-        wordlist = filedata["wordlist"]
-    if filedata["case_sensitive_wordlist"] != None:
-        case_sensitive_wordlist = filedata["case_sensitive_wordlist"]
-    filehandle.close()
- 
-commands_server_id_exists = False
-commands_channel_id_exists = False
- 
-adding_copy_server = False
-adding_copy_channel = False
-adding_post_server = False
-adding_post_channel = False
- 
-removing_copy_server = False
-removing_copy_channel = False
-removing_post_server = False
-removing_post_channel = False
- 
-async def edit_check():
- 
-    global edit_msg_list
- 
-    await bot.wait_until_ready()
-    while not bot.is_closed:
-        await asyncio.sleep(0.1)
-        for edit_msg in edit_msg_list:
-            if edit_msg["copy_message_object"].content != edit_msg["message_content"]:
-                try:
-                    await bot.edit_message(edit_msg["post_message_object"], new_content=text_message_filter(edit_msg["copy_message_object"].content))
-                    edit_msg_list[edit_msg_list.index(edit_msg)]["message_content"] = edit_msg["copy_message_object"].content
-                except Exception:
-                    pass
- 
- 
- 
-def text_message_filter(original_message):
- 
-    global case_sensitive_wordlist
-    global wordlist
- 
-    local_new_message = original_message
-    if case_sensitive_wordlist:
-        for word in wordlist:
-            local_new_message = local_new_message.replace(word, "")
-    else:
-        lowercase_message = local_new_message.lower()
-        new_letters = list(local_new_message)
-        letter_index = 0
-        uppercase_letter_indexes = []
-        for letter in new_letters:
-            if letter.isupper():
-                uppercase_letter_indexes.append(letter_index)
-            letter_index += 1
-        del letter_index
-        for word in wordlist:
-            replacement_word = len(word) * "�"
-            lowercase_message = lowercase_message.replace(word.lower(), replacement_word)
-        lowercase_letters = list(lowercase_message)
-        for letter_index in uppercase_letter_indexes:
-            lowercase_letters[letter_index] = lowercase_letters[letter_index].upper()
-        local_new_message = "".join(lowercase_letters)
-        local_new_message = local_new_message.replace("�", "")
-    return local_new_message
- 
-@bot.event
-async def on_ready():
-    await bot.wait_until_ready()
- 
-    global commands_server_id
-    global commands_channel_id
-    global commands_server_id_exists
-    global commands_channel_id_exists
- 
-    commands_server_id = commands_server_id.strip()
-    commands_channel_id = commands_channel_id.strip()
- 
-    if (len(commands_server_id) != 0):
-            try:
-                commands_server_object = bot.get_server(commands_server_id)
-                print("Commands Server: {0} ({1})".format(commands_server_object.name, commands_server_object.id))
-            except Exception:
-                print("Exiting: Invalid commands_server_id ({0})".format(commands_server_id))
-                time.sleep(5)
-                raise SystemExit
-            commands_server_id_exists = True
-            if (len(commands_channel_id) != 0):
-                try:
-                    commands_channel_object = bot.get_server(commands_server_id).get_channel(commands_channel_id)
-                    print("Commands Channel: {0} ({1})".format(commands_channel_object.name, commands_channel_object.id))
-                except Exception:
-                    print("Exiting: Invalid commands_channel_id ({0})".format(commands_channel_id))
-                    time.sleep(5)
-                    raise SystemExit
-                commands_channel_id_exists = True
- 
-    print (bot.user.name + " is ready")
-    print ("ID: " + bot.user.id)
- 
-@bot.event
-async def on_message(message):
- 
-	t0 = time.time()
- 
-	message_channel = message.channel
- 
-	global embed
-	global edit_msg_list
-	global edit_msg_list_length
- 
-	global copy_server_ids
-	global copy_channel_ids
-	global post_server_ids
-	global post_channel_ids
- 
-	global commands_server_id
-	global commands_channel_id
-	global commands_server_id_exists
-	global commands_channel_id_exists
- 
-	global adding_copy_server
-	global adding_copy_channel
-	global adding_post_server
-	global adding_post_channel
- 
-	global removing_copy_server
-	global removing_copy_channel
-	global removing_post_server
-	global removing_post_channel
- 
-	global memberlist
-	global wordlist
-	global case_sensitive_wordlist
- 
-	if ((not commands_server_id_exists) or (message.server.id == commands_server_id)) and ((not commands_channel_id_exists) or (message.channel.id == commands_channel_id)):
+
+
+
+
+
+#---------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+active_1 = True
+active_2 = True
+active_3 = True
+active_4 = True
+active_5 = True
+active_6 = True
+
+
+
+
+email = "email"
+password = "password"
+
+selfbot_1 = False
+commands_server_id_1 = "478566520255938560"
+commands_channel_id_1 = ""
+
+selfbot_2 = False
+commands_server_id_2 = "478566520255938560"
+commands_channel_id_2 = ""
+
+selfbot_3 = False
+commands_server_id_3 = "478566520255938560"
+commands_channel_id_3 = ""
+
+selfbot_4 = False
+commands_server_id_4 = "478566520255938560"
+commands_channel_id_4 = ""
+
+selfbot_5 = False
+commands_server_id_5 = "478566520255938560"
+commands_channel_id_5 = ""
+
+selfbot_6 = False
+commands_server_id_6 = "478566520255938560"
+commands_channel_id_6 = ""
+
+#---------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+
+
+
+
+
+globaldata = {}
+
+
+
+
+
+client = discord.Client()
+
+bot_1 = discord.Client()
+bot_1.unique_id = "001"
+bot_1.commands_server_id = commands_server_id_1
+bot_1.commands_channel_id = commands_channel_id_1
+
+bot_2 = discord.Client()
+bot_2.unique_id = "002"
+bot_2.commands_server_id = commands_server_id_2
+bot_2.commands_channel_id = commands_channel_id_2
+
+bot_3 = discord.Client()
+bot_3.unique_id = "003"
+bot_3.commands_server_id = commands_server_id_3
+bot_3.commands_channel_id = commands_channel_id_3
+
+bot_4 = discord.Client()
+bot_4.unique_id = "004"
+bot_4.commands_server_id = commands_server_id_4
+bot_4.commands_channel_id = commands_channel_id_4
+
+bot_5 = discord.Client()
+bot_5.unique_id = "005"
+bot_5.commands_server_id = commands_server_id_5
+bot_5.commands_channel_id = commands_channel_id_5
+
+bot_6 = discord.Client()
+bot_6.unique_id = "006"
+bot_6.commands_server_id = commands_server_id_6
+bot_6.commands_channel_id = commands_channel_id_6
+
+
+
+
+async def on_ready_code(bot):
+
+	global globaldata
+
+	await bot.wait_until_ready()
+
+	globaldata[bot.unique_id] = {
+		"filedata" : {
+					"setup_info" : {
+								"copy_server_ids" : [],
+								"copy_channel_ids" : [],
+								"post_server_ids" : [],
+								"post_channel_ids" : []
+								},
+					"memberlist" : [],
+					"wordlist" : [],
+					"case_sensitive_wordlist" : True
+					},
+		"edit_msg_list" : [],
+		"edit_msg_list_length" : 10,
+		"adding_copy_server" : False,
+		"adding_copy_channel" : False,
+		"adding_post_server" : False,
+		"adding_post_channel" : False,
+		"removing_copy_server" : False,
+		"removing_copy_channel" : False,
+		"removing_post_server" : False,
+		"removing_post_channel" : False
+	}
+
+
+
+	if bot.unique_id == "001":
+		globaldata[bot.unique_id]["filedata"] = {"setup_info" : {"copy_server_ids" : ["367376958293671950"], "copy_channel_ids" : ["421038368869318656"], "post_server_ids" : ["480080528947544065"], "post_channel_ids" : ["480080528947544069"]}, "memberlist" : ["376040692562264074"], "wordlist" : [], "case_sensitive_wordlist" : True}
+
+	elif bot.unique_id == "002":
+		globaldata[bot.unique_id]["filedata"] = {"setup_info" : {"copy_server_ids" : ["367376958293671950"], "copy_channel_ids" : ["469397929757507604"], "post_server_ids" : ["480080528947544065"], "post_channel_ids" : ["481878850041806848"]}, "memberlist" : ["376040692562264074"], "wordlist" : [], "case_sensitive_wordlist" : True}
+
+	elif bot.unique_id == "003":
+		globaldata[bot.unique_id]["filedata"] = {"setup_info" : {"copy_server_ids" : ["367376958293671950"], "copy_channel_ids" : ["421038641566187521"], "post_server_ids" : ["480080528947544065"], "post_channel_ids" : ["481878863685746689"]}, "memberlist" : ["376040692562264074"], "wordlist" : [], "case_sensitive_wordlist" : True}
+
+	elif bot.unique_id == "004":
+		globaldata[bot.unique_id]["filedata"] = {"setup_info" : {"copy_server_ids" : ["367376958293671950"], "copy_channel_ids" : ["421039028515635210"], "post_server_ids" : ["480080528947544065"], "post_channel_ids" : ["481878880018235392"]}, "memberlist" : ["376040692562264074"], "wordlist" : [], "case_sensitive_wordlist" : True}
+
+	elif bot.unique_id == "005":
+		globaldata[bot.unique_id]["filedata"] = {"setup_info" : {"copy_server_ids" : ["367376958293671950"], "copy_channel_ids" : ["477128535086071820"], "post_server_ids" : ["480080528947544065"], "post_channel_ids" : ["481878892961988608"]}, "memberlist" : ["376040692562264074"], "wordlist" : [], "case_sensitive_wordlist" : True}
+
+	elif bot.unique_id == "006":
+		globaldata[bot.unique_id]["filedata"] = {"setup_info" : {"copy_server_ids" : ["367376958293671950"], "copy_channel_ids" : ["469397433185730570"], "post_server_ids" : ["480080528947544065"], "post_channel_ids" : ["481878907692515328"]}, "memberlist" : ["376040692562264074"], "wordlist" : [], "case_sensitive_wordlist" : True}
+
+
+
+
+
+	print (bot.user.name + " is ready")
+	print ("ID: " + bot.user.id)
+
+
+
+
+
+async def on_message_code(bot, message):
+
+	global globaldata
+
+	filedata = globaldata[bot.unique_id]["filedata"]
+
+	copy_server_ids = filedata["setup_info"]["copy_server_ids"]
+	copy_channel_ids = filedata["setup_info"]["copy_channel_ids"]
+	post_server_ids = filedata["setup_info"]["post_server_ids"]
+	post_channel_ids = filedata["setup_info"]["post_channel_ids"]
+	memberlist = filedata["memberlist"]
+	wordlist = filedata["wordlist"]
+	case_sensitive_wordlist = filedata["case_sensitive_wordlist"]
+
+	edit_msg_list = globaldata[bot.unique_id]["edit_msg_list"]
+	edit_msg_list_length = globaldata[bot.unique_id]["edit_msg_list_length"]
+
+	adding_copy_server = globaldata[bot.unique_id]["adding_copy_server"]
+	adding_copy_channel = globaldata[bot.unique_id]["adding_copy_channel"]
+	adding_post_server = globaldata[bot.unique_id]["adding_post_server"]
+	adding_post_channel = globaldata[bot.unique_id]["adding_post_channel"]
+
+	removing_copy_server = globaldata[bot.unique_id]["removing_copy_server"]
+	removing_copy_channel = globaldata[bot.unique_id]["removing_copy_channel"]
+	removing_post_server = globaldata[bot.unique_id]["removing_post_server"]
+	removing_post_channel = globaldata[bot.unique_id]["removing_post_channel"]
+
+	commands_server_id = bot.commands_server_id
+	commands_channel_id = bot.commands_channel_id
+
+
+
+
+
+	if (message.server.id == commands_server_id) and (message.channel.id == commands_channel_id):
 
 		# If block for all the commands.
 
@@ -220,8 +200,6 @@ async def on_message(message):
 
 			####################################################################################################
 			####################################################################################################
-
-
 
 			if (message.content[:12] == "!memberlist ") or (message.content == "!memberlist"):
 				if (copy_server_ids != []) and (copy_channel_ids != []):
@@ -236,14 +214,11 @@ async def on_message(message):
 									if not (member.id in memberlist):
 										memberlist.append(member.id)
 										count += 1
-							filedata["memberlist"] = memberlist     #SAVE TO FILE
-							filehandle = open(filename, "w")
-							json.dump(filedata, filehandle)
-							filehandle.close()
+							filedata["memberlist"] = memberlist		#SAVE TO FILE
 							if count == 1:
-								await bot.send_message(message_channel, """**[1] member was added to the memberlist.**""")
+								await bot.send_message(message.channel, """**[1] member was added to the memberlist.**""")
 							else:
-								await bot.send_message(message_channel, """**[{0}] members were added to the memberlist.**""".format(str(count)))
+								await bot.send_message(message.channel, """**[{0}] members were added to the memberlist.**""".format(str(count)))
 							del count
 						else:
 							temp_bool = True
@@ -251,33 +226,28 @@ async def on_message(message):
 								for member in bot.get_server(copy_server_id).members:
 									if (message.content[16:] == member.name) or (message.content[16:] == member.id):
 										if member.id in memberlist:
-											await bot.send_message(message_channel, """**The member *{0} ({1})* is already in the memberlist.**
-**Use the command *!memberlist* to see all the members who have their messages currently being copied.**
-""".format(member.name, member.id))
+											await bot.send_message(message.channel, """**The member *{0} ({1})* is already in the memberlist.**
+	**Use the command *!memberlist* to see all the members who have their messages currently being copied.**
+	""".format(member.name, member.id))
 										else:
 											memberlist.append(member.id)
-											filedata["memberlist"] = memberlist     #SAVE TO FILE
-											filehandle = open(filename, "w")
-											json.dump(filedata, filehandle)
-											filehandle.close()
-											await bot.send_message(message_channel, """**The member *{0} ({1})* has been added to the memberlist.**
-""".format(member.name, member.id))
+											filedata["memberlist"] = memberlist		#SAVE TO FILE
+											await bot.send_message(message.channel, """**The member *{0} ({1})* has been added to the memberlist.**
+	""".format(member.name, member.id))
 										temp_bool = False
 										break
 								if (not temp_bool):
 									break
 							if temp_bool:
-								list_sender = ""
 								if message.content.strip()[:16] == "!memberlist add ":
-									list_sender += """**Invalid member - does not exist**\n"""
-								list_sender += """**Here are all the members in the copy servers.**
-**Use the command *!memberlist add member* to add a member to the memberlist.**"""
+									await bot.send_message(message.channel, """**Invalid member - does not exist**""")
+								await bot.send_message(message.channel, """**Here are all the members in the copy servers.**
+	**Use the command *!memberlist add member* to add a member to the memberlist.**""")
 								for copy_server_id in copy_server_ids:
 									copy_server_object = bot.get_server(copy_server_id)
-									list_sender += """\n\n**{0} ({1})**""".format(copy_server_object.name, copy_server_object.id)
+									await bot.send_message(message.channel, """**{0} ({1})**""".format(copy_server_object.name, copy_server_object.id))
 									for member in copy_server_object.members:
-										list_sender += """\n• {0} ({1})""".format(member.name, member.id)
-								await bot.send_message(message.channel, list_sender)
+										await bot.send_message(message.channel, """• {0} ({1})""".format(member.name, member.id))
 							del temp_bool
 
 					#!MEMBERLIST REMOVE
@@ -287,14 +257,11 @@ async def on_message(message):
 							if (message.content[:23] == "!memberlist remove all ") or (message.content == "!memberlist remove all"):
 								count = len(memberlist)
 								memberlist = []
-								filedata["memberlist"] = memberlist     #SAVE TO FILE
-								filehandle = open(filename, "w")
-								json.dump(filedata, filehandle)
-								filehandle.close()
+								filedata["memberlist"] = memberlist		#SAVE TO FILE
 								if count == 1:
-									await bot.send_message(message_channel, """**[1] member was removed from the memberlist.**""")
+									await bot.send_message(message.channel, """**[1] member was removed from the memberlist.**""")
 								else:
-									await bot.send_message(message_channel, """**[{0}] members were removed from the memberlist.**""".format(str(count)))
+									await bot.send_message(message.channel, """**[{0}] members were removed from the memberlist.**""".format(str(count)))
 								del count
 							else:
 								temp_bool = True
@@ -307,58 +274,50 @@ async def on_message(message):
 										else:
 											if (message.content[19:] == member_object.name) or (message.content[19:] == member_object.id):
 												memberlist.remove(member_object.id)
-												filedata["memberlist"] = memberlist     #SAVE TO FILE
-												filehandle = open(filename, "w")
-												json.dump(filedata, filehandle)
-												filehandle.close()
-												await bot.send_message(message_channel, """**The member *{0} ({1})* has been removed from the memberlist.**
-""".format(member_object.name, member_object.id))
+												filedata["memberlist"] = memberlist		#SAVE TO FILE
+												await bot.send_message(message.channel, """**The member *{0} ({1})* has been removed from the memberlist.**
+	""".format(member_object.name, member_object.id))
 												temp_bool = False
 												break
 								if temp_bool:
-									list_sender = ""
 									if message.content.strip()[:19] == "!memberlist remove ":
-										list_sender += """**Invalid member - not in memberlist**\n"""
-									list_sender += """**Here are all the members in the memberlist (the members who have their messages currently being copied).**
-**Use the command *!memberlist remove member* to remove a member from the memberlist**"""
+										await bot.send_message(message.channel, """**Invalid member - not in memberlist**""")
+									await bot.send_message(message.channel, """**Here are all the members in the memberlist (the members who have their messages currently being copied).**
+	**Use the command *!memberlist remove member* to remove a member from the memberlist**""")
 									for member_id in memberlist:
 										for copy_server_id in copy_server_ids:
 											try:
 												member_object = bot.get_server(copy_server_id).get_member(member_id)
-												list_sender += """\n• {0} ({1})""".format(member_object.name, member_object.id)
+												await bot.send_message(message.channel, """• {0} ({1})""".format(member_object.name, member_object.id))
 											except Exception:
 												pass
-									await bot.send_message(message.channel, list_sender)
 								del temp_bool
 						else:
-							await bot.send_message(message_channel, """**There are currently no members in the memberlist.**
-**For more commands on the memberlist, use the command *!help*.**""")
+							await bot.send_message(message.channel, """**There are currently no members in the memberlist.**
+	**For more commands on the memberlist, use the command *!help*.**""")
 
 					#!MEMBERLIST
 
 					else:
 						if len(memberlist) > 0:
-							list_sender = ""
-							list_sender += """**[MEMBERLIST]**
-
-**These members are currently having their messages copied when they send a message in the copy channels in the copy servers.**
-**For more commands on the memberlist, use the command *!help*.**"""
+							await bot.send_message(message.channel, """**[MEMBERLIST]**
+	**These members are currently having their messages copied when they send a message in the copy channels in the copy servers.**
+	**For more commands on the memberlist, use the command *!help*.**""")
 							for member_id in memberlist:
 								for copy_server_id in copy_server_ids:
 									try:
 										member_object = bot.get_server(copy_server_id).get_member(member_id)
-										list_sender += """\n• {0} ({1})""".format(member_object.name, member_object.id)
+										await bot.send_message(message.channel, """• {0} ({1})""".format(member_object.name, member_object.id))
 									except Exception:
 										pass
-							await bot.send_message(message.channel, list_sender)
 						else:
-							await bot.send_message(message_channel, """**There are no members currently in the memberlist.**
-**For more commands on the memberlist, use the command *!help*.**""")
+							await bot.send_message(message.channel, """**There are no members currently in the memberlist.**
+	**For more commands on the memberlist, use the command *!help*.**""")
 
 
 
 				else:
-					await bot.send_message(message_channel, """**The server to copy from and the channel to copy from must be set up before the *!memberlist* command can be used.**""")
+					await bot.send_message(message.channel, """**The server to copy from and the channel to copy from must be set up before the *!memberlist* command can be used.**""")
 
 
 
@@ -376,28 +335,22 @@ async def on_message(message):
 						if (message.content.strip()[:14] == "!wordlist add "):
 							if (message.content[14:] in wordlist) or ((not case_sensitive_wordlist) and (message.content[14:].lower() in wordlist)):
 								if case_sensitive_wordlist:
-									await bot.send_message(message_channel, """**The word *{0}* is already in the wordlist.**
-**Use the command *!wordlist* to see all the words that are currently being removed from the copied messages.**""".format(message.content[14:]))
+									await bot.send_message(message.channel, """**The word *{0}* is already in the wordlist.**
+	**Use the command *!wordlist* to see all the words that are currently being removed from the copied messages.**""".format(message.content[14:]))
 								else:
-									await bot.send_message(message_channel, """**The word *{0}* is already in the wordlist.**
-**Use the command *!wordlist* to see all the words that are currently being removed from the copied messages.**""".format(message.content[14:].lower()))
+									await bot.send_message(message.channel, """**The word *{0}* is already in the wordlist.**
+	**Use the command *!wordlist* to see all the words that are currently being removed from the copied messages.**""".format(message.content[14:].lower()))
 							else:
 								if case_sensitive_wordlist:
 									wordlist.append(message.content[14:])
-									filedata["wordlist"] = wordlist     #SAVE TO FILE
-									filehandle = open(filename, "w")
-									json.dump(filedata, filehandle)
-									filehandle.close()
-									await bot.send_message(message_channel, """**The word *{0}* has been added to the wordlist.**""".format(message.content[14:]))
+									filedata["wordlist"] = wordlist		#SAVE TO FILE
+									await bot.send_message(message.channel, """**The word *{0}* has been added to the wordlist.**""".format(message.content[14:]))
 								else:
 									wordlist.append(message.content[14:].lower())
-									filedata["wordlist"] = wordlist     #SAVE TO FILE
-									filehandle = open(filename, "w")
-									json.dump(filedata, filehandle)
-									filehandle.close()
-									await bot.send_message(message_channel, """**The word *{0}* has been added to the wordlist.**""".format(message.content[14:].lower()))
+									filedata["wordlist"] = wordlist		#SAVE TO FILE
+									await bot.send_message(message.channel, """**The word *{0}* has been added to the wordlist.**""".format(message.content[14:].lower()))
 						else:
-							await bot.send_message(message_channel, """**Use the command *!wordlist add word* to add a member to the wordlist.**""")
+							await bot.send_message(message.channel, """**Use the command *!wordlist add word* to add a member to the wordlist.**""")
 
 					#!WORDLIST REMOVE
 
@@ -406,41 +359,32 @@ async def on_message(message):
 							if (message.content[:21] == "!wordlist remove all ") or (message.content == "!wordlist remove all"):
 								count = len(wordlist)
 								wordlist = []
-								filedata["wordlist"] = wordlist     #SAVE TO FILE
-								filehandle = open(filename, "w")
-								json.dump(filedata, filehandle)
-								filehandle.close()
+								filedata["wordlist"] = wordlist		#SAVE TO FILE
 								if count == 1:
-									await bot.send_message(message_channel, """**[1] word was removed from the wordlist.**""")
+									await bot.send_message(message.channel, """**[1] word was removed from the wordlist.**""")
 								else:
-									await bot.send_message(message_channel, """**[{0}] words were removed from the wordlist.**""".format(str(count)))
+									await bot.send_message(message.channel, """**[{0}] words were removed from the wordlist.**""".format(str(count)))
 								del count
 							else:
 								if (message.content[17:] in wordlist) or ((not case_sensitive_wordlist) and (message.content[17:].lower() in wordlist)):
 									if case_sensitive_wordlist:
 										wordlist.remove(message.content[17:])
-										filedata["wordlist"] = wordlist     #SAVE TO FILE
-										filehandle = open(filename, "w")
-										json.dump(filedata, filehandle)
-										filehandle.close()
-										await bot.send_message(message_channel, """**The word *{0}* has been removed from the wordlist.**""".format(message.content[17:]))
+										filedata["wordlist"] = wordlist		#SAVE TO FILE
+										await bot.send_message(message.channel, """**The word *{0}* has been removed from the wordlist.**""".format(message.content[17:]))
 									else:
 										wordlist.remove(message.content[17:].lower())
-										filedata["wordlist"] = wordlist     #SAVE TO FILE
-										filehandle = open(filename, "w")
-										json.dump(filedata, filehandle)
-										filehandle.close()
-										await bot.send_message(message_channel, """**The word *{0}* has been removed from the wordlist.**""".format(message.content[17:].lower()))
+										filedata["wordlist"] = wordlist		#SAVE TO FILE
+										await bot.send_message(message.channel, """**The word *{0}* has been removed from the wordlist.**""".format(message.content[17:].lower()))
 								else:
 									if (message.content.strip()[:17] == "!wordlist remove "):
-										await bot.send_message(message_channel, """**Invalid word - not in wordlist**""")
-									await bot.send_message(message_channel, """**Here are all the words in the wordlist (the words that are currently being removed from the copied messages).**
-**Use the command *!wordlist remove word* to remove a word from the wordlist**""")
+										await bot.send_message(message.channel, """**Invalid word - not in wordlist**""")
+									await bot.send_message(message.channel, """**Here are all the words in the wordlist (the words that are currently being removed from the copied messages).**
+	**Use the command *!wordlist remove word* to remove a word from the wordlist**""")
 									for word in wordlist:
-										await bot.send_message(message_channel, """• {0}""".format(word))
+										await bot.send_message(message.channel, """• {0}""".format(word))
 						else:
-							await bot.send_message(message_channel, """**There are currently no words in the wordlist.**
-**For more commands on the wordlist, use the command *!help*.**""")
+							await bot.send_message(message.channel, """**There are currently no words in the wordlist.**
+	**For more commands on the wordlist, use the command *!help*.**""")
 
 					#!WORDLIST TOGGLE CASE
 
@@ -453,38 +397,31 @@ async def on_message(message):
 										for x in range(wordlist.count(word) - 1):
 											wordlist.remove(word)
 							case_sensitive_wordlist = False
-							filedata["wordlist"] = wordlist     #SAVE TO FILE
+							filedata["wordlist"] = wordlist		#SAVE TO FILE
 							filedata["case_sensitive_wordlist"] = case_sensitive_wordlist
-							filehandle = open(filename, "w")
-							json.dump(filedata, filehandle)
-							filehandle.close()
-							await bot.send_message(message_channel, """The wordlist is now case **insensitive**.""")
+							await bot.send_message(message.channel, """The wordlist is now case **insensitive**.""")
 						else:
 							case_sensitive_wordlist = True
-							filedata["case_sensitive_wordlist"] = case_sensitive_wordlist       #SAVE TO FILE
-							filehandle = open(filename, "w")
-							json.dump(filedata, filehandle)
-							filehandle.close()
-							await bot.send_message(message_channel, """The wordlist is now case **sensitive**.""")
+							filedata["case_sensitive_wordlist"] = case_sensitive_wordlist		#SAVE TO FILE
+							await bot.send_message(message.channel, """The wordlist is now case **sensitive**.""")
 
 					#!WORDLIST
 
 					elif (message.content[:10] == "!wordlist ") or (message.content == "!wordlist"):
 						if len(wordlist) > 0:
-							await bot.send_message(message_channel, """**[WORDLIST]**
-
-**These words are currently being removed from the copied messages.**
-**For more commands on the wordlist, use the command *!help*.**""")
+							await bot.send_message(message.channel, """**[WORDLIST]**
+	**These words are currently being removed from the copied messages.**
+	**For more commands on the wordlist, use the command *!help*.**""")
 							for word in wordlist:
-								await bot.send_message(message_channel, """• {0} """.format(word))
+								await bot.send_message(message.channel, """• {0} """.format(word))
 						else:
-							await bot.send_message(message_channel, """**There are no words currently in the wordlist.**
-**For more commands on the wordlist, use the command *!help*.**""")
+							await bot.send_message(message.channel, """**There are no words currently in the wordlist.**
+	**For more commands on the wordlist, use the command *!help*.**""")
 
 
 
 				else:
-					await bot.send_message(message_channel, """**The server to copy from and the channel to copy from must be set up before the *!wordlist* command can be used.**""")
+					await bot.send_message(message.channel, """**The server to copy from and the channel to copy from must be set up before the *!wordlist* command can be used.**""")
 
 
 
@@ -503,17 +440,14 @@ async def on_message(message):
 						for server_object in bot.servers:
 							if not (server_object.id in copy_server_ids):
 								temp_bool
-						list_sender = ""
-						list_sender += """**[ADDING COPY SERVER]**
-
-**Type one of these servers to add them to the copy server list.**\n"""
+						await bot.send_message(message.channel, """**[ADDING COPY SERVER]**
+	**Type one of these servers to add them to the copy server list.**""")
 						for server_object in bot.servers:
 							if not (server_object.id in copy_server_ids):
-								list_sender += """\n• {0} ({1})""".format(server_object.name, server_object.id)
-						await bot.send_message(message.channel, list_sender)
+								await bot.send_message(message.channel, """• {0} ({1})""".format(server_object.name, server_object.id))
 						adding_copy_server = True
 					else:
-						await bot.send_message(message_channel, """**All the servers I'm in are already in the copy server list.**""")
+						await bot.send_message(message.channel, """**All the servers I'm in are already in the copy server list.**""")
 
 
 				elif (message.content[:18] == "!add copy channel ") or (message.content == "!add copy channel"):
@@ -524,20 +458,17 @@ async def on_message(message):
 							if (not (channel_object.id in copy_channel_ids)) and (str(channel_object.type) == "text"):
 								temp_bool = True
 					if temp_bool:
-						list_sender = ""
-						list_sender += """**[ADDING COPY CHANNEL]**
-
-**Type one of these channels to add them to the copy channel list.**"""
+						await bot.send_message(message.channel, """**[ADDING COPY CHANNEL]**
+	**Type one of these channels to add them to the copy channel list.**""")
 						for server_object in bot.servers:
 							if server_object.id in copy_server_ids:
-								list_sender += """\n\n**{0} ({1})**""".format(server_object.name, server_object.id)
+								await bot.send_message(message.channel, """**{0} ({1})**""".format(server_object.name, server_object.id))
 								for channel_object in server_object.channels:
 									if (not (channel_object.id in copy_channel_ids)) and (str(channel_object.type) == "text"):
-										list_sender += """\n• {0} ({1})""".format(channel_object.name, channel_object.id)
-						await bot.send_message(message.channel, list_sender)
+										await bot.send_message(message.channel, """• {0} ({1})""".format(channel_object.name, channel_object.id))
 						adding_copy_channel = True
 					else:
-						await bot.send_message(message_channel, """**All the channels I'm in are already in the copy channel list.**""")
+						await bot.send_message(message.channel, """**All the channels I'm in are already in the copy channel list.**""")
 
 
 				elif (message.content[:17] == "!add post server ") or (message.content == "!add post server"):
@@ -546,17 +477,14 @@ async def on_message(message):
 						if not (server_object.id in post_server_ids):
 							temp_bool = True
 					if temp_bool:
-						list_sender = ""
-						list_sender += """**[ADDING POST SERVER]**
-
-**Type one of these servers to add them to the post server list.**\n"""
+						await bot.send_message(message.channel, """**[ADDING POST SERVER]**
+	**Type one of these servers to add them to the post server list.**""")
 						for server_object in bot.servers:
 							if not (server_object.id in post_server_ids):
-								list_sender += """\n• {0} ({1})""".format(server_object.name, server_object.id)
-						await bot.send_message(message.channel, list_sender)
+								await bot.send_message(message.channel, """• {0} ({1})""".format(server_object.name, server_object.id))
 						adding_post_server = True
 					else:
-						await bot.send_message(message_channel, """**All the servers I'm in are already in the post server list.**""")
+						await bot.send_message(message.channel, """**All the servers I'm in are already in the post server list.**""")
 
 
 				elif (message.content[:18] == "!add post channel ") or (message.content == "!add post channel"):
@@ -567,32 +495,26 @@ async def on_message(message):
 							if (not (channel_object.id in post_channel_ids)) and (str(channel_object.type) == "text"):
 								temp_bool = True
 					if temp_bool:
-						list_sender = ""
-						list_sender += """**[ADDING POST CHANNEL]**
-
-**Type one of these channels to add them to the post channel list.**"""
+						await bot.send_message(message.channel, """**[ADDING POST CHANNEL]**
+	**Type one of these channels to add them to the post channel list.**""")
 						for server_object in bot.servers:
 							if server_object.id in post_server_ids:
-								list_sender += """\n\n**{0} ({1})**""".format(server_object.name, server_object.id)
+								await bot.send_message(message.channel, """**{0} ({1})**""".format(server_object.name, server_object.id))
 								for channel_object in server_object.channels:
 									if (not (channel_object.id in post_channel_ids)) and (str(channel_object.type) == "text"):
-										list_sender += """\n• {0} ({1})""".format(channel_object.name, channel_object.id)
-						await bot.send_message(message.channel, list_sender)
+										await bot.send_message(message.channel, """• {0} ({1})""".format(channel_object.name, channel_object.id))
 						adding_post_channel = True
 					else:
-						await bot.send_message(message_channel, """**All the channels I'm in are already in the post channel list.**""")
+						await bot.send_message(message.channel, """**All the channels I'm in are already in the post channel list.**""")
 
 
 				else:
-					await bot.send_message(message_channel, """**Use *!add* like this:**
-
-• *!add copy server* : Adds a server to copy from.
-• *!add copy channel* : Adds a channel (in the copy servers) to copy from.
-• *!add post server* : Adds a server to post to.
-• *!add post channel* : Adds a channel (in the post servers) to post to.
-
-• *!cancel* : Cancels adding any of the above.
-""")
+					await bot.send_message(message.channel, """**Use *!add* like this:**
+	• *!add copy server* : Adds a server to copy from.
+	• *!add copy channel* : Adds a channel (in the copy servers) to copy from.
+	• *!add post server* : Adds a server to post to.
+	• *!add post channel* : Adds a channel (in the post servers) to post to.
+	""")
 
 
 
@@ -604,26 +526,21 @@ async def on_message(message):
 			elif (message.content[:8] == "!remove ") or (message.content == "!remove"):
 				if (message.content[:20] == "!remove copy server ") or (message.content == "!remove copy server"):
 					if len(copy_server_ids) > 0:
-						list_sender = ""
-						list_sender += """**[REMOVING COPY SERVER]**
-
-**Type one of these servers to remove them from the copy server list.**\n"""
+						await bot.send_message(message.channel, """**[REMOVING COPY SERVER]**
+	**Type one of these servers to remove them from the copy server list.**""")
 						for copy_server_id in copy_server_ids:
 							server_object = bot.get_server(copy_server_id)
-							list_sender += """\n• {0} ({1})""".format(server_object.name, server_object.id)
-						await bot.send_message(message.channel, list_sender)
+							await bot.send_message(message.channel, """• {0} ({1})""".format(server_object.name, server_object.id))
 						removing_copy_server = True
 					else:
-						await bot.send_message(message_channel, """**There are currently no copy servers.**""")
+						await bot.send_message(message.channel, """**There are currently no copy servers.**""")
 
 
 
 				elif (message.content[:21] == "!remove copy channel ") or (message.content == "!remove copy channel"):
 					if len(copy_channel_ids) > 0:
-						list_sender = ""
-						list_sender += """**[REMOVING COPY CHANNEL]**
-
-**Type one of these channels to remove them from the copy channel list.**"""
+						await bot.send_message(message.channel, """**[REMOVING COPY CHANNEL]**
+	**Type one of these channels to remove them from the copy channel list.**""")
 						for copy_server_id in copy_server_ids:
 							server_object = bot.get_server(copy_server_id)
 							temp_bool = False
@@ -631,39 +548,33 @@ async def on_message(message):
 								if channel_object.id in copy_channel_ids:
 									temp_bool = True
 							if temp_bool:
-								list_sender += """\n\n**{0} ({1})**""".format(server_object.name, server_object.id)
+								await bot.send_message(message.channel, """**{0} ({1})**""".format(server_object.name, server_object.id))
 							for channel_object in server_object.channels:
 								if channel_object.id in copy_channel_ids:
-									list_sender += """\n• {0} ({1})""".format(channel_object.name, channel_object.id)
-						await bot.send_message(message.channel, list_sender)
+									await bot.send_message(message.channel, """• {0} ({1})""".format(channel_object.name, channel_object.id))
 						removing_copy_channel = True
 					else:
-						await bot.send_message(message_channel, """**There are currently no copy channels.**""")
+						await bot.send_message(message.channel, """**There are currently no copy channels.**""")
 
 
 
 				elif (message.content[:20] == "!remove post server ") or (message.content == "!remove post server"):
 					if len(post_server_ids) > 0:
-						list_sender = ""
-						list_sender += """**[REMOVING POST SERVER]**
-
-**Type one of these servers to remove them from the post server list.**\n"""
+						await bot.send_message(message.channel, """**[REMOVING POST SERVER]**
+	**Type one of these servers to remove them from the post server list.**""")
 						for post_server_id in post_server_ids:
 							server_object = bot.get_server(post_server_id)
-							list_sender += """\n• {0} ({1})""".format(server_object.name, server_object.id)
-						await bot.send_message(message.channel, list_sender)
+							await bot.send_message(message.channel, """• {0} ({1})""".format(server_object.name, server_object.id))
 						removing_post_server = True
 					else:
-						await bot.send_message(message_channel, """**There are currently no post servers.**""")
+						await bot.send_message(message.channel, """**There are currently no post servers.**""")
 
 
 
 				elif (message.content[:21] == "!remove post channel ") or (message.content == "!remove post channel"):
 						if len(post_channel_ids) > 0:
-							list_sender = ""
-							list_sender += """**[REMOVING POST CHANNEL]**
-
-**Type one of these channels to remove them from the post channel list.**"""
+							await bot.send_message(message.channel, """**[REMOVING POST CHANNEL]**
+	**Type one of these channels to remove them from the post channel list.**""")
 							for post_server_id in post_server_ids:
 								server_object = bot.get_server(post_server_id)
 								temp_bool = False
@@ -671,50 +582,43 @@ async def on_message(message):
 									if channel_object.id in post_channel_ids:
 										temp_bool = True
 								if temp_bool:
-									list_sender += """\n\n**{0} ({1})**""".format(server_object.name, server_object.id)
+									await bot.send_message(message.channel, """**{0} ({1})**""".format(server_object.name, server_object.id))
 								for channel_object in server_object.channels:
 									if channel_object.id in post_channel_ids:
-										list_sender += """\n• {0} ({1})""".format(channel_object.name, channel_object.id)
-							await bot.send_message(message.channel, list_sender)
+										await bot.send_message(message.channel, """• {0} ({1})""".format(channel_object.name, channel_object.id))
 							removing_post_channel = True
 						else:
-							await bot.send_message(message_channel, """**There are currently no post channels.**""")
+							await bot.send_message(message.channel, """**There are currently no post channels.**""")
 
 
 
 				else:
-					await bot.send_message(message_channel, """**Use *!remove* like this:**
-
-• *!remove copy server* : Removes a copy server.
-• *!remove copy channel* : Removes a copy channel.
-• *!remove post server* : Removes a post server.
-• *!remove post channel* : Removes a post channel.
-
-• *!cancel* : Cancels removing any of the above.
-""")
+					await bot.send_message(message.channel, """**Use *!remove* like this:**
+	• *!remove copy server* : Removes a copy server.
+	• *!remove copy channel* : Removes a copy channel.
+	• *!remove post server* : Removes a post server.
+	• *!remove post channel* : Removes a post channel.
+	""")
 
 
 			####################################################################################################
 			####################################################################################################
 
 			elif (message.content[:6] == "!help ") or (message.content == "!help"):
-				await bot.send_message(message_channel, """**[COMMANDS]**
-
-• *!memberlist* : Shows you all the members currently in the memberlist.
-• *!memberlist add member* : Adds a member from the copy server to the memberlist.
-• *!memberlist add all* : Adds all the members from the copy server to the memberlist.
-• *!memberlist remove member* : Removes a member from the memberlist.
-• *!memberlist remove all* : Removes all the members from the memberlist.
-
-• *!wordlist* : Shows all the words currently in the wordlist.
-• *!wordlist add word* : Adds a word to the wordlist.
-• *!wordlist remove word* : Removes a word from the wordlist .
-• *!wordlist remove all* : Removes all the words from the wordlist.
-• *!wordlist toggle case* : Toggles between case insensitive and case sensitive.
-
-• *!add* : Shows the commands for adding copy/post servers/channels.
-• *!remove* : Shows the commands for removing copy/post servers/channels.
-""")
+				await bot.send_message(message.channel, """**[COMMANDS]**
+	• *!memberlist* : Shows you all the members currently in the memberlist.
+	• *!memberlist add member* : Adds a member from the copy server to the memberlist.
+	• *!memberlist add all* : Adds all the members from the copy server to the memberlist.
+	• *!memberlist remove member* : Removes a member from the memberlist.
+	• *!memberlist remove all* : Removes all the members from the memberlist.
+	• *!wordlist* : Shows all the words currently in the wordlist.
+	• *!wordlist add word* : Adds a word to the wordlist.
+	• *!wordlist remove word* : Removes a word from the wordlist .
+	• *!wordlist remove all* : Removes all the words from the wordlist.
+	• *!wordlist toggle case* : Toggles between case insensitive and case sensitive.
+	• *!add* : Shows the commands for adding copy/post servers/channels.
+	• *!remove* : Shows the commands for removing copy/post servers/channels.
+	""")
 
 
 			####################################################################################################
@@ -742,19 +646,16 @@ async def on_message(message):
 			for server_object in bot.servers:
 				if (message.content == server_object.name) or (message.content == server_object.id):
 					if server_object.id in copy_server_ids:
-						await bot.send_message(message_channel, """**Invalid server - already a copy server.**""")
+						await bot.send_message(message.channel, """**Invalid server - already a copy server.**""")
 					else:
 						copy_server_ids.append(server_object.id)
-						filedata["setup_info"]["copy_server_ids"] = copy_server_ids     #SAVE TO FILE
-						filehandle = open(filename, "w")
-						json.dump(filedata, filehandle)
-						filehandle.close()
-						await bot.send_message(message_channel, """**The copy server *{0} ({1})* has been added.**""".format(server_object.name, server_object.id))
+						filedata["setup_info"]["copy_server_ids"] = copy_server_ids		#SAVE TO FILE
+						await bot.send_message(message.channel, """**The copy server *{0} ({1})* has been added.**""".format(server_object.name, server_object.id))
 						adding_copy_server = False
 					temp_bool = False
 					break
 			if adding_copy_server and temp_bool:
-				await bot.send_message(message_channel, """**Invalid server - does not exist.**""")
+				await bot.send_message(message.channel, """**Invalid server - does not exist.**""")
 
 
 
@@ -764,19 +665,16 @@ async def on_message(message):
 				for channel_object in bot.get_server(server_id).channels:
 					if (message.content == channel_object.name) or (message.content == channel_object.id):
 						if channel_object.id in copy_channel_ids:
-							await bot.send_message(message_channel, """**Invalid channel - already a copy channel.**""")
+							await bot.send_message(message.channel, """**Invalid channel - already a copy channel.**""")
 						else:
 							copy_channel_ids.append(channel_object.id)
-							filedata["setup_info"]["copy_channel_ids"] = copy_channel_ids       #SAVE TO FILE
-							filehandle = open(filename, "w")
-							json.dump(filedata, filehandle)
-							filehandle.close()
-							await bot.send_message(message_channel, """**The copy channel *{0} ({1})* has been added.**""".format(channel_object.name, channel_object.id))
+							filedata["setup_info"]["copy_channel_ids"] = copy_channel_ids		#SAVE TO FILE
+							await bot.send_message(message.channel, """**The copy channel *{0} ({1})* has been added.**""".format(channel_object.name, channel_object.id))
 							adding_copy_channel = False
 						temp_bool = False
 						break
 			if adding_copy_channel and temp_bool:
-				await bot.send_message(message_channel, """**Invalid channel - does not exist.**""")
+				await bot.send_message(message.channel, """**Invalid channel - does not exist.**""")
 
 
 
@@ -785,19 +683,16 @@ async def on_message(message):
 			for server_object in bot.servers:
 				if (message.content == server_object.name) or (message.content == server_object.id):
 					if server_object.id in post_server_ids:
-						await bot.send_message(message_channel, """**Invalid server - already a post server.**""")
+						await bot.send_message(message.channel, """**Invalid server - already a post server.**""")
 					else:
 						post_server_ids.append(server_object.id)
-						filedata["setup_info"]["post_server_ids"] = post_server_ids     #SAVE TO FILE
-						filehandle = open(filename, "w")
-						json.dump(filedata, filehandle)
-						filehandle.close()
-						await bot.send_message(message_channel, """**The post server *{0} ({1})* has been added.**""".format(server_object.name, server_object.id))
+						filedata["setup_info"]["post_server_ids"] = post_server_ids		#SAVE TO FILE
+						await bot.send_message(message.channel, """**The post server *{0} ({1})* has been added.**""".format(server_object.name, server_object.id))
 						adding_post_server = False
 					temp_bool = False
 					break
 			if adding_post_server and temp_bool:
-				await bot.send_message(message_channel, """**Invalid server - does not exist.**""")
+				await bot.send_message(message.channel, """**Invalid server - does not exist.**""")
 
 
 
@@ -807,19 +702,16 @@ async def on_message(message):
 				for channel_object in bot.get_server(server_id).channels:
 					if (message.content == channel_object.name) or (message.content == channel_object.id):
 						if channel_object.id in post_channel_ids:
-							await bot.send_message(message_channel, """**Invalid channel - already a post channel.**""")
+							await bot.send_message(message.channel, """**Invalid channel - already a post channel.**""")
 						else:
 							post_channel_ids.append(channel_object.id)
-							filedata["setup_info"]["post_channel_ids"] = post_channel_ids       #SAVE TO FILE
-							filehandle = open(filename, "w")
-							json.dump(filedata, filehandle)
-							filehandle.close()
-							await bot.send_message(message_channel, """**The post channel *{0} ({1})* has been added.**""".format(channel_object.name, channel_object.id))
+							filedata["setup_info"]["post_channel_ids"] = post_channel_ids		#SAVE TO FILE
+							await bot.send_message(message.channel, """**The post channel *{0} ({1})* has been added.**""".format(channel_object.name, channel_object.id))
 							adding_post_channel = False
 						temp_bool = False
 						break
 			if adding_post_channel and temp_bool:
-				await bot.send_message(message_channel, """**Invalid channel - does not exist.**""")
+				await bot.send_message(message.channel, """**Invalid channel - does not exist.**""")
 
 
 
@@ -831,14 +723,11 @@ async def on_message(message):
 				if (message.content == server_object.name) or (message.content == server_object.id):
 					if server_object.id in copy_server_ids:
 						copy_server_ids.remove(server_object.id)
-						filedata["setup_info"]["copy_server_ids"] = copy_server_ids     #SAVE TO FILE
-						filehandle = open(filename, "w")
-						json.dump(filedata, filehandle)
-						filehandle.close()
-						await bot.send_message(message_channel, """**The copy server *{0} ({1})* has been removed.**""".format(server_object.name, server_object.id))
+						filedata["setup_info"]["copy_server_ids"] = copy_server_ids		#SAVE TO FILE
+						await bot.send_message(message.channel, """**The copy server *{0} ({1})* has been removed.**""".format(server_object.name, server_object.id))
 						removing_copy_server = False
 			if removing_copy_server:
-				await bot.send_message(message_channel, """**Invalid server - not a copy server.**""")
+				await bot.send_message(message.channel, """**Invalid server - not a copy server.**""")
 
 
 
@@ -848,14 +737,11 @@ async def on_message(message):
 					if (message.content == channel_object.name) or (message.content == channel_object.id):
 						if channel_object.id in copy_channel_ids:
 							copy_channel_ids.remove(channel_object.id)
-							filedata["setup_info"]["copy_channel_ids"] = copy_channel_ids       #SAVE TO FILE
-							filehandle = open(filename, "w")
-							json.dump(filedata, filehandle)
-							filehandle.close()
-							await bot.send_message(message_channel, """**The copy channel *{0} ({1})* has been removed.**""".format(channel_object.name, channel_object.id))
+							filedata["setup_info"]["copy_channel_ids"] = copy_channel_ids		#SAVE TO FILE
+							await bot.send_message(message.channel, """**The copy channel *{0} ({1})* has been removed.**""".format(channel_object.name, channel_object.id))
 							removing_copy_channel = False
 			if removing_copy_channel:
-				await bot.send_message(message_channel, """**Invalid channel - not a copy channel.**""")
+				await bot.send_message(message.channel, """**Invalid channel - not a copy channel.**""")
 
 
 
@@ -864,14 +750,11 @@ async def on_message(message):
 				if (message.content == server_object.name) or (message.content == server_object.id):
 					if server_object.id in post_server_ids:
 						post_server_ids.remove(server_object.id)
-						filedata["setup_info"]["post_server_ids"] = post_server_ids     #SAVE TO FILE
-						filehandle = open(filename, "w")
-						json.dump(filedata, filehandle)
-						filehandle.close()
-						await bot.send_message(message_channel, """**The post server *{0} ({1})* has been removed.**""".format(server_object.name, server_object.id))
+						filedata["setup_info"]["post_server_ids"] = post_server_ids		#SAVE TO FILE
+						await bot.send_message(message.channel, """**The post server *{0} ({1})* has been removed.**""".format(server_object.name, server_object.id))
 						removing_post_server = False
 			if removing_post_server:
-				await bot.send_message(message_channel, """**Invalid server - not a post server.**""")
+				await bot.send_message(message.channel, """**Invalid server - not a post server.**""")
 
 
 
@@ -881,14 +764,11 @@ async def on_message(message):
 					if (message.content == channel_object.name) or (message.content == channel_object.id):
 						if channel_object.id in post_channel_ids:
 							post_channel_ids.remove(channel_object.id)
-							filedata["setup_info"]["post_channel_ids"] = post_channel_ids       #SAVE TO FILE
-							filehandle = open(filename, "w")
-							json.dump(filedata, filehandle)
-							filehandle.close()
-							await bot.send_message(message_channel, """**The post channel *{0} ({1})* has been removed.**""".format(channel_object.name, channel_object.id))
+							filedata["setup_info"]["post_channel_ids"] = post_channel_ids		#SAVE TO FILE
+							await bot.send_message(message.channel, """**The post channel *{0} ({1})* has been removed.**""".format(channel_object.name, channel_object.id))
 							removing_post_channel = False
 			if removing_post_channel:
-				await bot.send_message(message_channel, """**Invalid channel - not a post channel.**""")
+				await bot.send_message(message.channel, """**Invalid channel - not a post channel.**""")
 
 	# Checks if the message being sent is in the copy server and in the copy channel,
 	# and if it is, then it posts that same message to the post server.
@@ -983,10 +863,103 @@ async def on_message(message):
 								server_object = bot.get_server(post_server_id)
 								channel_object = server_object.get_channel(post_channel_id)
 								if channel_object in server_object.channels:
-									await bot.send_message(channel_object, embed=embed)
+									try:
+										await bot.send_message(channel_object, embed=embed)
+									except Exception as e:
+										print(e)
+										print("EMBED: {0}".format(embed_info))
 
 
-				print("Time taken: " + str(time.time() - t0))
- 
-bot.loop.create_task(edit_check())
-bot.loop.run_until_complete(bot.start(email, password, bot=(not selfbot)))
+
+
+
+	globaldata[bot.unique_id]["filedata"] = filedata
+
+	globaldata[bot.unique_id]["edit_msg_list"] = edit_msg_list
+	globaldata[bot.unique_id]["edit_msg_list_length"] = edit_msg_list_length
+
+	globaldata[bot.unique_id]["adding_copy_server"] = adding_copy_server
+	globaldata[bot.unique_id]["adding_copy_channel"] = adding_copy_channel
+	globaldata[bot.unique_id]["adding_post_server"] = adding_post_server
+	globaldata[bot.unique_id]["adding_post_channel"] = adding_post_channel
+
+	globaldata[bot.unique_id]["removing_copy_server"] = removing_copy_server
+	globaldata[bot.unique_id]["removing_copy_channel"] = removing_copy_channel
+	globaldata[bot.unique_id]["removing_post_server"] = removing_post_server
+	globaldata[bot.unique_id]["removing_post_channel"] = removing_post_channel
+
+
+
+
+
+@bot_1.event
+async def on_ready():
+	await on_ready_code(bot_1)
+
+@bot_2.event
+async def on_ready():
+	await on_ready_code(bot_2)
+
+@bot_3.event
+async def on_ready():
+	await on_ready_code(bot_3)
+
+@bot_4.event
+async def on_ready():
+	await on_ready_code(bot_4)
+
+@bot_5.event
+async def on_ready():
+	await on_ready_code(bot_5)
+
+@bot_6.event
+async def on_ready():
+	await on_ready_code(bot_6)
+
+
+
+
+
+@bot_1.event
+async def on_message(message):
+	await on_message_code(bot_1, message)
+
+@bot_2.event
+async def on_message(message):
+	await on_message_code(bot_2, message)
+
+@bot_3.event
+async def on_message(message):
+	await on_message_code(bot_3, message)
+
+@bot_4.event
+async def on_message(message):
+	await on_message_code(bot_4, message)
+
+@bot_5.event
+async def on_message(message):
+	await on_message_code(bot_5, message)
+
+@bot_6.event
+async def on_message(message):
+	await on_message_code(bot_6, message)
+
+
+
+
+
+args = []
+if active_1:
+	args.append(bot_1.start(email, password, bot=not(selfbot_1)))
+if active_2:
+	args.append(bot_2.start(email, password, bot=not(selfbot_2)))
+if active_3:
+	args.append(bot_3.start(email, password, bot=not(selfbot_3)))
+if active_4:
+	args.append(bot_4.start(email, password, bot=not(selfbot_4)))
+if active_5:
+	args.append(bot_5.start(email, password, bot=not(selfbot_5)))
+if active_6:
+	args.append(bot_6.start(email, password, bot=not(selfbot_6)))
+
+client.loop.run_until_complete(asyncio.gather(*args))
