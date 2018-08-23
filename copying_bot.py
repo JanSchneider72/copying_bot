@@ -95,6 +95,7 @@ bot_6.commands_channel_id = commands_channel_id_6
 
 
 
+
 async def on_ready_code(bot):
 
 	global globaldata
