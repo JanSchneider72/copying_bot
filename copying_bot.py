@@ -19,8 +19,8 @@ active_6 = True
 
 
 
-email = "email"
-password = "password"
+email = str(os.environ.get("ACCOUNT_EMAIL"))
+password = str(os.environ.get("ACCOUNT_PASSWORD"))
 
 selfbot_1 = False
 commands_server_id_1 = "478566520255938560"
