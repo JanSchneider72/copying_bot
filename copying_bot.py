@@ -97,6 +97,29 @@ bot_6.commands_channel_id = commands_channel_id_6
 
 
 
+async def edit_check(bot):
+
+	global globaldata
+
+	await bot.wait_until_ready()
+
+	await asyncio.sleep(2)
+	edit_msg_list = globaldata[bot.unique_id]["edit_msg_list"]
+
+	while not bot.is_closed:
+		await asyncio.sleep(0.1)
+		for edit_msg in edit_msg_list:
+			if edit_msg["copy_message_object"].content != edit_msg["message_content"]:
+				try:
+					await bot.edit_message(edit_msg["post_message_object"], new_content=text_message_filter(edit_msg["copy_message_object"].content, bot))
+					edit_msg_list[edit_msg_list.index(edit_msg)]["message_content"] = edit_msg["copy_message_object"].content
+				except Exception:
+					pass
+
+
+
+
+
 async def on_ready_code(bot):
 
 	global globaldata
