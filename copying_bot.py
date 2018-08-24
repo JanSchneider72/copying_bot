@@ -117,6 +117,41 @@ async def edit_check(bot):
 					pass
 
 
+				
+				
+				
+def text_message_filter(original_message, bot):
+
+	global globaldata
+
+	case_sensitive_wordlist = globaldata[bot.unique_id]["filedata"]["case_sensitive_wordlist"]
+	wordlist = globaldata[bot.unique_id]["filedata"]["wordlist"]
+
+	local_new_message = original_message
+	if case_sensitive_wordlist:
+		for word in wordlist:
+			local_new_message = local_new_message.replace(word, "")
+	else:
+		lowercase_message = local_new_message.lower()
+		new_letters = list(local_new_message)
+		letter_index = 0
+		uppercase_letter_indexes = []
+		for letter in new_letters:
+			if letter.isupper():
+				uppercase_letter_indexes.append(letter_index)
+			letter_index += 1
+		del letter_index
+		for word in wordlist:
+			replacement_word = len(word) * "�"
+			lowercase_message = lowercase_message.replace(word.lower(), replacement_word)
+		lowercase_letters = list(lowercase_message)
+		for letter_index in uppercase_letter_indexes:
+			lowercase_letters[letter_index] = lowercase_letters[letter_index].upper()
+		local_new_message = "".join(lowercase_letters)
+		local_new_message = local_new_message.replace("�", "")
+	return local_new_message
+				
+				
 
 
 
@@ -823,7 +858,7 @@ async def on_message_code(bot, message):
 														"message_content" : message.content,
 														"message_type" : "text"})
 
-								new_message = text_message_filter(message.content)
+								new_message = text_message_filter(message.content, bot)
 								edit_msg_list[0]["post_message_object"] = await bot.send_message(channel_object, new_message)
 
 				if message.attachments != []:
@@ -976,15 +1011,21 @@ async def on_message(message):
 args = []
 if active_1:
 	args.append(bot_1.start(email, password, bot=not(selfbot_1)))
+	bot_1.loop.create_task(edit_check(bot_1))
 if active_2:
 	args.append(bot_2.start(email, password, bot=not(selfbot_2)))
+	bot_2.loop.create_task(edit_check(bot_2))
 if active_3:
 	args.append(bot_3.start(email, password, bot=not(selfbot_3)))
+	bot_3.loop.create_task(edit_check(bot_3))
 if active_4:
 	args.append(bot_4.start(email, password, bot=not(selfbot_4)))
+	bot_4.loop.create_task(edit_check(bot_4))
 if active_5:
 	args.append(bot_5.start(email, password, bot=not(selfbot_5)))
+	bot_5.loop.create_task(edit_check(bot_5))
 if active_6:
 	args.append(bot_6.start(email, password, bot=not(selfbot_6)))
+	bot_6.loop.create_task(edit_check(bot_6))
 
 client.loop.run_until_complete(asyncio.gather(*args))
