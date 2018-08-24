@@ -23,29 +23,29 @@ active_6 = True
 email = str(os.environ.get("ACCOUNT_EMAIL"))
 password = str(os.environ.get("ACCOUNT_PASSWORD"))
 
-selfbot_1 = False
+selfbot_1 = True
 commands_server_id_1 = "478566520255938560"
-commands_channel_id_1 = ""
+commands_channel_id_1 = "478566520255938562"
 
-selfbot_2 = False
+selfbot_2 = True
 commands_server_id_2 = "478566520255938560"
-commands_channel_id_2 = ""
+commands_channel_id_2 = "478566520255938562"
 
-selfbot_3 = False
+selfbot_3 = True
 commands_server_id_3 = "478566520255938560"
-commands_channel_id_3 = ""
+commands_channel_id_3 = "478566520255938562"
 
-selfbot_4 = False
+selfbot_4 = True
 commands_server_id_4 = "478566520255938560"
-commands_channel_id_4 = ""
+commands_channel_id_4 = "478566520255938562"
 
-selfbot_5 = False
+selfbot_5 = True
 commands_server_id_5 = "478566520255938560"
-commands_channel_id_5 = ""
+commands_channel_id_5 = "478566520255938562"
 
-selfbot_6 = False
+selfbot_6 = True
 commands_server_id_6 = "478566520255938560"
-commands_channel_id_6 = ""
+commands_channel_id_6 = "478566520255938562"
 
 #---------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
