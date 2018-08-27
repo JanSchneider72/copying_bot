@@ -28,28 +28,28 @@ token = str(os.environ.get("TOKEN"))
 
 
 selfbot_1 = True
-commands_server_id_1 = "478566520255938560"
-commands_channel_id_1 = "478566520255938562"
+commands_server_id_1 = "480080528947544065"
+commands_channel_id_1 = "480080528947544069"
 
 selfbot_2 = True
-commands_server_id_2 = "478566520255938560"
-commands_channel_id_2 = "478566520255938562"
+commands_server_id_2 = "480080528947544065"
+commands_channel_id_2 = "481878850041806848"
 
 selfbot_3 = True
-commands_server_id_3 = "478566520255938560"
-commands_channel_id_3 = "478566520255938562"
+commands_server_id_3 = "480080528947544065"
+commands_channel_id_3 = "481878863685746689"
 
 selfbot_4 = True
-commands_server_id_4 = "478566520255938560"
-commands_channel_id_4 = "478566520255938562"
+commands_server_id_4 = "480080528947544065"
+commands_channel_id_4 = "481878880018235392"
 
 selfbot_5 = True
-commands_server_id_5 = "478566520255938560"
-commands_channel_id_5 = "478566520255938562"
+commands_server_id_5 = "480080528947544065"
+commands_channel_id_5 = "481878892961988608"
 
 selfbot_6 = True
-commands_server_id_6 = "478566520255938560"
-commands_channel_id_6 = "478566520255938562"
+commands_server_id_6 = "480080528947544065"
+commands_channel_id_6 = "481878907692515328"
 
 #---------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
